@@ -16,12 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { useState } from 'react';
 import styled from '@emotion/styled';
 import Layout from '@theme/Layout';
 import { mq } from '../utils';
 import SectionHeader from '../components/SectionHeader';
 import BlurredSection from '../components/BlurredSection';
+import CommunityCalendar from '../components/CommunityCalendar';
 
 const communityLinks = [
   {
@@ -134,18 +134,6 @@ const StyledJoinCommunity = styled('section')`
   }
 `;
 
-const StyledCalendarIframe = styled('iframe')`
-  display: block;
-  margin: 20px auto 30px;
-  max-width: 800px;
-  width: 100%;
-  height: 600px;
-  border: 0;
-  ${mq[1]} {
-    width: calc(100% - 40px);
-  }
-`;
-
 const StyledLink = styled('a')`
   display: inline-flex;
   align-items: center;
@@ -166,18 +154,7 @@ const StyledLink = styled('a')`
   }
 `;
 
-const FinePrint = styled('div')`
-  font-size: 14px;
-  color: var(--ifm-secondary-text);
-`;
-
 const Community = () => {
-  const [showCalendar, setShowCalendar] = useState(false); // State to control calendar visibility
-
-  const toggleCalendar = () => {
-    setShowCalendar(!showCalendar); // Toggle calendar visibility
-  };
-
   return (
     <Layout
       title="Community"
@@ -234,27 +211,10 @@ const Community = () => {
                   <img src="/img/calendar-icon.svg" alt="calendar-icon" />
                   Subscribe to the Superset Community Calendar
                 </StyledLink>
-                <br />
-                <StyledLink onClick={toggleCalendar}>
-                  <img src="/img/calendar-icon.svg" alt="calendar-icon" />
-                  {showCalendar ? 'Hide Calendar' : 'Display Calendar*'}
-                </StyledLink>
-                {!showCalendar && (
-                  <FinePrint>
-                    <sup>*</sup>Clicking on this link will load and send data
-                    from and to Google.
-                  </FinePrint>
-                )}
               </>
             }
           />
-          {showCalendar && (
-            <StyledCalendarIframe
-              src="https://calendar.google.com/calendar/embed?src=superset.committers%40gmail.com&ctz=America%2FLos_Angeles"
-              frameBorder="0"
-              scrolling="no"
-            />
-          )}
+          <CommunityCalendar />
         </BlurredSection>
       </main>
     </Layout>
