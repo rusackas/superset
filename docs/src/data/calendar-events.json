@@ -1,5 +1,5 @@
 {
-  "fetchedAt": "2026-02-02T13:36:23.472Z",
+  "fetchedAt": "2026-02-02T13:46:27.921Z",
   "source": "fallback",
   "calendarId": "superset.committers@gmail.com",
   "events": [
@@ -8,8 +8,8 @@
       "summary": "Community Meetup",
       "description": "Join us for our regular community meetup! Visit the calendar subscription link to see live events.",
       "location": "Virtual",
-      "start": "2026-02-09T13:36:23.472Z",
-      "end": "2026-02-09T14:36:23.472Z",
+      "start": "2026-02-09T13:46:27.921Z",
+      "end": "2026-02-09T14:46:27.921Z",
       "isAllDay": false,
       "htmlLink": "https://calendar.google.com/calendar/u/0/r?cid=superset.committers@gmail.com",
       "status": "confirmed"
