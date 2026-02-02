@@ -19,7 +19,7 @@
 
 import React, { useState, useMemo } from 'react';
 import styled from '@emotion/styled';
-import { Calendar, Badge, Card, List, Typography, Tag } from 'antd';
+import { Calendar, Badge, Card, List, Typography } from 'antd';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
