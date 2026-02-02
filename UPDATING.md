@@ -24,6 +24,21 @@ assists people when migrating to a new version.
 
 ## Next
 
+### Community Calendar Feature
+
+#### Documentation Website Enhancement
+The documentation website now includes an interactive Community Calendar on the `/community` page:
+- Calendar data is automatically fetched from Google Calendar during the build process
+- Uses Ant Design Calendar component for interactive, accessible display
+- Shows upcoming events in both calendar and list views
+- Responsive design works across all devices
+- No manual updates needed - events are managed in Google Calendar
+
+For contributors:
+- Calendar data is stored in `docs/src/data/calendar-events.json`
+- Update calendar events by running: `cd docs && yarn run generate:calendar-events`
+- Full setup documentation: `docs/docs/contributing/calendar-setup.md`
+
 ### Example Data Loading Improvements
 
 #### New Directory Structure

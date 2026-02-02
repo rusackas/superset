@@ -22,6 +22,7 @@
     "generate:superset-components": "node scripts/generate-superset-components.mjs",
     "generate:database-docs": "node scripts/generate-database-docs.mjs",
     "generate:calendar-events": "node scripts/fetch-calendar-events.mjs",
+    "validate:calendar-data": "node scripts/validate-calendar-data.mjs",
     "gen-db-docs": "node scripts/generate-database-docs.mjs",
     "generate:all": "yarn run generate:extension-components && yarn run generate:superset-components && yarn run generate:database-docs && yarn run generate:calendar-events && yarn run generate:api-docs",
     "lint:db-metadata": "python3 ../superset/db_engine_specs/lint_metadata.py",
