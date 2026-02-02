@@ -123,13 +123,13 @@ const EventBadge = styled(Badge)`
 `;
 
 const EventTime = styled.span`
-  color: var(--ifm-color-secondary);
+  color: var(--ifm-color-emphasis-600);
   font-size: 14px;
   margin-left: 8px;
 `;
 
 const EventDescription = styled(Paragraph)`
-  color: var(--ifm-color-secondary);
+  color: var(--ifm-color-emphasis-600);
   font-size: 14px;
   margin-top: 8px;
   white-space: pre-wrap;
@@ -153,7 +153,7 @@ const DataSourceNote = styled.div`
   border-left: 4px solid var(--ifm-color-info);
   border-radius: 4px;
   font-size: 14px;
-  color: var(--ifm-color-secondary);
+  color: var(--ifm-color-emphasis-600);
 `;
 
 const CommunityCalendar: React.FC = () => {

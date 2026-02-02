@@ -115,29 +115,37 @@ function transformEvents(apiResponse) {
     return [];
   }
 
-  return apiResponse.items.map((event) => {
-    // Handle both date and dateTime formats
-    const startDate = event.start?.dateTime || event.start?.date;
-    const endDate = event.end?.dateTime || event.end?.date;
-    const isAllDay = !event.start?.dateTime;
+  return apiResponse.items
+    .filter((event) => {
+      // Filter out events with missing date information
+      const hasValidDates =
+        (event.start?.dateTime || event.start?.date) &&
+        (event.end?.dateTime || event.end?.date);
+      return hasValidDates;
+    })
+    .map((event) => {
+      // Handle both date and dateTime formats
+      const startDate = event.start?.dateTime || event.start?.date;
+      const endDate = event.end?.dateTime || event.end?.date;
+      const isAllDay = !event.start?.dateTime;
 
-    return {
-      id: event.id,
-      summary: event.summary || 'Untitled Event',
-      description: event.description || '',
-      location: event.location || '',
-      start: startDate,
-      end: endDate,
-      isAllDay: isAllDay,
-      htmlLink: event.htmlLink,
-      status: event.status,
-      created: event.created,
-      updated: event.updated,
-      organizer: {
-        email: event.organizer?.email,
-        displayName: event.organizer?.displayName,
-      },
-      conferenceData: event.conferenceData
+      return {
+        id: event.id,
+        summary: event.summary || 'Untitled Event',
+        description: event.description || '',
+        location: event.location || '',
+        start: startDate,
+        end: endDate,
+        isAllDay: isAllDay,
+        htmlLink: event.htmlLink,
+        status: event.status,
+        created: event.created,
+        updated: event.updated,
+        organizer: {
+          email: event.organizer?.email,
+          displayName: event.organizer?.displayName,
+        },
+        conferenceData: event.conferenceData
         ? {
             entryPoints: event.conferenceData.entryPoints,
             conferenceSolution: event.conferenceData.conferenceSolution,

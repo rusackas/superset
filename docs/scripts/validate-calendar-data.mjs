@@ -87,7 +87,7 @@ try {
     try {
       new Date(event.start);
       new Date(event.end);
-    } catch (error) {
+    } catch {
       console.error(`✗ Event ${index} has invalid date format`);
       process.exit(1);
     }
