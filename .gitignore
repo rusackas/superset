@@ -143,3 +143,7 @@ PROJECT.md
 oxc-custom-build/
 *.code-workspace
 *.duckdb
+
+# Generated backend query-context bundle (#33615) — built via
+# `npm run build:backend-querycontext`, never committed.
+superset/commands/chart/_bundles/query_context_bundle.js

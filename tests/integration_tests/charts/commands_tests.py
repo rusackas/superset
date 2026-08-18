@@ -358,9 +358,13 @@ class TestImportChartsCommand(SupersetTestCase):
         }
         assert query_context["queries"][0]["metrics"] == ["count"]
 
+        dataset = chart.datasource
+        database = dataset.database if dataset else None
         db.session.delete(chart)
-        db.session.delete(chart.datasource)
-        db.session.delete(chart.datasource.database)
+        if dataset:
+            db.session.delete(dataset)
+        if database:
+            db.session.delete(database)
         db.session.commit()
 
     @patch("superset.utils.core.g")
@@ -392,9 +396,13 @@ class TestImportChartsCommand(SupersetTestCase):
         assert query_context["datasource"]["id"] == chart.datasource_id
         assert query_context["result_type"] == "full"
 
+        dataset = chart.datasource
+        database = dataset.database if dataset else None
         db.session.delete(chart)
-        db.session.delete(chart.datasource)
-        db.session.delete(chart.datasource.database)
+        if dataset:
+            db.session.delete(dataset)
+        if database:
+            db.session.delete(database)
         db.session.commit()
 
     @patch("superset.utils.core.g")
