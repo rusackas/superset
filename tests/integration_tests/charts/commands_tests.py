@@ -345,9 +345,7 @@ class TestImportChartsCommand(SupersetTestCase):
         }
         ImportChartsCommand(contents, overwrite=True).run()
 
-        chart: Slice = (
-            db.session.query(Slice).filter_by(uuid=derivable["uuid"]).one()
-        )
+        chart: Slice = db.session.query(Slice).filter_by(uuid=derivable["uuid"]).one()
         # --- RED anchor: synthesis persisted a non-null context (FR-001) ---
         assert chart.query_context is not None
         query_context = json.loads(chart.query_context)
@@ -390,7 +388,7 @@ class TestImportChartsCommand(SupersetTestCase):
         chart: Slice = (
             db.session.query(Slice).filter_by(uuid=chart_config["uuid"]).one()
         )
-        # --- RED anchor: context still present; datasource remapped, not synthesized ---
+        # --- RED anchor: context still present; datasource remapped, not resynthesized
         assert chart.query_context is not None
         query_context = json.loads(chart.query_context)
         assert query_context["datasource"]["id"] == chart.datasource_id
@@ -456,11 +454,13 @@ class TestImportChartsCommand(SupersetTestCase):
         assert markup_chart.query_context is None
 
         dataset = derivable_chart.datasource
-        database = dataset.database
+        database = dataset.database if dataset else None
         db.session.delete(derivable_chart)
         db.session.delete(markup_chart)
-        db.session.delete(dataset)
-        db.session.delete(database)
+        if dataset:
+            db.session.delete(dataset)
+        if database:
+            db.session.delete(database)
         db.session.commit()
 
     @patch("superset.commands.database.importers.v1.utils.add_permissions")
