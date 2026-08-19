@@ -122,7 +122,8 @@ class ImportChartsCommand(ImportModelsCommand):
                 }
                 config = update_chart_config_dataset(config, dataset_dict)
                 # Capture the pre-import context state before `import_chart`
-                # mutates `config` (it synthesizes into config["query_context"]).
+                # mutates `config` (it synthesizes into config["query_context"]
+                # and serializes config["params"]).
                 had_query_context = bool(config.get("query_context"))
                 chart = import_chart(
                     config, overwrite=overwrite, default_viewers=default_viewers
