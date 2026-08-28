@@ -167,6 +167,14 @@ def _synthesize_query_context_if_absent(config: dict[str, Any]) -> None:
         return
     try:
         params = config.get("params") or {}
+        # ``params`` is a dict early in the import flow but a JSON string once
+        # serialized ahead of migration; accept either so synthesis can run
+        # after ``migrate_chart`` on the migrated form data.
+        if isinstance(params, str):
+            try:
+                params = json.loads(params) or {}
+            except (json.JSONDecodeError, TypeError):
+                params = {}
         viz_type = config["viz_type"]
         datasource_id = config.get("datasource_id")
         datasource_type = config.get("datasource_type", "table")
@@ -267,8 +275,6 @@ def import_chart(
 
     filter_chart_annotations(config)
 
-    _synthesize_query_context_if_absent(config)
-
     # TODO (betodealmeida): move this logic to import_from_dict
     config["params"] = json.dumps(config["params"])
 
@@ -276,6 +282,14 @@ def import_chart(
     config = migrate_chart(config)
 
     extra = config.pop("extra", None)
+
+    # Synthesize the query_context AFTER migration so legacy viz types (e.g.
+    # dual_line -> mixed_timeseries) derive their queries from the migrated
+    # viz_type and params rather than the pre-migration form data (#33615
+    # review). Guarded on an absent context, so a chart that shipped its own
+    # query_context (already patched by migrate_chart) is never overwritten.
+    _synthesize_query_context_if_absent(config)
+
     chart = Slice.import_from_dict(config, recursive=False, allow_reparenting=True)
     if chart.id is None:
         db.session.flush()
