@@ -469,7 +469,6 @@ def test_import_existing_active_chart_overwrite_without_can_write_returns_existi
     assert result.deleted_at is None
 
 
-
 def test_import_chart_synthesizes_query_context(
     mocker: MockerFixture, session_with_schema: Session
 ) -> None:
@@ -641,8 +640,6 @@ def test_import_non_derivable_chart_leaves_query_context_null(
 
     # --- RED anchor: honest-fail leaves NULL, import still succeeds (FR-003) ---
     assert chart.query_context is None
-
-
 
 
 def test_import_tag_logic_for_charts(session_with_schema: Session):
