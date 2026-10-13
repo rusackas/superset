@@ -2290,10 +2290,10 @@ test('re-entering the same LIKE text after a parent reset commits a new mask', a
   });
   expect(setDataMaskMock).toHaveBeenCalledWith(containsJen);
 
-  // The parent echoes the committed value, then resets it to a different
-  // default, which moves the committed mask away from 'Jen'.
+  // The parent echoes the committed value, then clears it with no
+  // replacement default, so re-entering 'Jen' is the only way to set it again.
   rerender(<SelectFilterPlugin {...buildProps(['Jen'])} />);
-  rerender(<SelectFilterPlugin {...buildProps(undefined, ['Bob'])} />);
+  rerender(<SelectFilterPlugin {...buildProps(undefined, undefined)} />);
   await act(async () => {});
   expect(input).toHaveValue('');
 
