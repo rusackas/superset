@@ -14,6 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+import math
 from contextlib import nullcontext
 from datetime import datetime
 from typing import Any
@@ -153,3 +154,23 @@ def test_json_codec_rejects_bytes():
     """Raw bytes must raise rather than be silently stringified."""
     with pytest.raises(KeyValueCodecEncodeException):
         JsonKeyValueCodec().encode(b"hello")
+
+
+@pytest.mark.parametrize(
+    "stored",
+    [b'{"value": NaN}', b'{"value": Infinity}', b'{"value": -Infinity}'],
+)
+def test_json_codec_decodes_legacy_non_finite(stored: bytes):
+    """Values persisted by the stdlib `json` codec must remain readable."""
+    value = JsonKeyValueCodec().decode(stored)["value"]
+    assert not math.isfinite(value)
+
+
+@pytest.mark.parametrize("value", [math.nan, math.inf, -math.inf])
+def test_json_codec_round_trips_non_finite(value: float):
+    codec = JsonKeyValueCodec()
+    decoded = codec.decode(codec.encode({"value": value}))["value"]
+    if math.isnan(value):
+        assert math.isnan(decoded)
+    else:
+        assert decoded == value

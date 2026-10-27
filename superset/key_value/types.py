@@ -119,13 +119,18 @@ class JsonKeyValueCodec(KeyValueCodec):
         if isinstance(value, (bytes, bytearray)):
             raise KeyValueCodecEncodeException("Cannot JSON-encode a bytes value")
         try:
-            return bytes(json.dumps(value), encoding="utf-8")
+            # Keep NaN/Infinity round-trippable, matching the stdlib `json`
+            # behavior this codec has always persisted with
+            return bytes(
+                json.dumps(value, allow_nan=True, ignore_nan=False),
+                encoding="utf-8",
+            )
         except TypeError as ex:
             raise KeyValueCodecEncodeException(str(ex)) from ex
 
     def decode(self, value: bytes) -> dict[Any, Any]:
         try:
-            return json.loads(value)
+            return json.loads(value, allow_nan=True)
         except TypeError as ex:
             raise KeyValueCodecDecodeException(str(ex)) from ex
 
