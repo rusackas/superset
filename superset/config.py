@@ -2858,6 +2858,11 @@ ALERT_REPORTS_WEBHOOK_TIMEOUT = 60
 # the webhook target is on an internal network (a chatops bridge, an internal
 # Mattermost/Rocket.Chat, an automation server, etc.). Leave False (the default)
 # in any internet-facing deployment.
+# While False, webhook requests connect directly and ignore HTTP(S)_PROXY /
+# NO_PROXY and .netrc from the environment (a proxied connection would bypass
+# the connected-peer check). REQUESTS_CA_BUNDLE / CURL_CA_BUNDLE are still
+# honoured. Deployments that must send webhooks through a proxy have to set this
+# to True, which also disables the internal-host and connected-peer checks.
 ALERT_REPORTS_WEBHOOK_ALLOW_INTERNAL_HOSTS: bool = False
 
 # When True, Impala's cancel_query HTTP call is permitted to target hosts in
@@ -2866,6 +2871,9 @@ ALERT_REPORTS_WEBHOOK_ALLOW_INTERNAL_HOSTS: bool = False
 # default) in any deployment where untrusted users can create Impala database
 # connections, so a maliciously-configured impala:// URL cannot be used to
 # trigger outbound requests to internal targets via the cancel endpoint.
+# While False, the cancel request connects directly and ignores HTTP(S)_PROXY /
+# NO_PROXY and .netrc from the environment; setting it to True restores proxy
+# support but also disables the internal-host and connected-peer checks.
 IMPALA_CANCEL_QUERY_ALLOW_INTERNAL_HOSTS: bool = False
 
 # A custom prefix to use on all Alerts & Reports emails

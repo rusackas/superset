@@ -24,6 +24,15 @@ assists people when migrating to a new version.
 
 ## Next
 
+- Webhook alert/report dispatch and the Impala `cancel_query` HTTP call reuse the
+  shared SSRF-safe requester. Unless `ALERT_REPORTS_WEBHOOK_ALLOW_INTERNAL_HOSTS`
+  (webhooks) or `IMPALA_CANCEL_QUERY_ALLOW_INTERNAL_HOSTS` (Impala) is `True`,
+  these requests connect directly and ignore `HTTP(S)_PROXY`, `NO_PROXY` and
+  `.netrc` from the environment, because a proxied connection would bypass the
+  connected-peer check. `REQUESTS_CA_BUNDLE` / `CURL_CA_BUNDLE` are still
+  honoured. Deployments that must route these requests through a proxy need to
+  set the matching flag to `True`; note that this also disables the
+  internal-host and connected-peer checks for those requests.
 - MCP `update_dashboard` rejects blank or whitespace-only `dashboard_title`
   values with "Text must not be empty"; omit the field to keep the stored title.
   MCP chart names and theme names are capped at 250 characters, matching their

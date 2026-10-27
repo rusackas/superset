@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import ipaddress
+import os
 import platform
 import socket
 import subprocess
@@ -158,6 +159,14 @@ def get_ssrf_safe_requester(allow_unsafe_hosts: bool = False) -> Any:
     # these calls through a proxy opt in via ``allow_unsafe_hosts`` (which
     # returns the plain ``requests`` module and honours the environment).
     session.trust_env = False
+    # Disabling ``trust_env`` also stops Requests from reading a custom CA
+    # bundle from the environment, so apply it explicitly (same precedence as
+    # Requests) to keep targets signed by an operator-configured private CA
+    # verifiable.
+    if ca_bundle := os.environ.get("REQUESTS_CA_BUNDLE") or os.environ.get(
+        "CURL_CA_BUNDLE"
+    ):
+        session.verify = ca_bundle
     adapter = PeerValidatingHTTPAdapter()
     session.mount("http://", adapter)
     session.mount("https://", adapter)

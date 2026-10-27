@@ -232,6 +232,46 @@ def test_get_ssrf_safe_requester_ignores_environment_proxies() -> None:
     assert get_ssrf_safe_requester().trust_env is False
 
 
+@pytest.mark.parametrize(
+    ("env", "expected"),
+    [
+        ({}, True),
+        ({"REQUESTS_CA_BUNDLE": "/operator/ca.pem"}, "/operator/ca.pem"),
+        ({"CURL_CA_BUNDLE": "/operator/curl-ca.pem"}, "/operator/curl-ca.pem"),
+        (
+            {
+                "REQUESTS_CA_BUNDLE": "/operator/ca.pem",
+                "CURL_CA_BUNDLE": "/operator/curl-ca.pem",
+            },
+            "/operator/ca.pem",
+        ),
+    ],
+)
+def test_get_ssrf_safe_requester_honours_ca_bundle(
+    monkeypatch: pytest.MonkeyPatch, env: dict[str, str], expected: str | bool
+) -> None:
+    """
+    Disabling ``trust_env`` must not drop an operator-configured CA bundle,
+    while environment proxies stay ignored and peer validation stays mounted.
+    """
+    monkeypatch.delenv("REQUESTS_CA_BUNDLE", raising=False)
+    monkeypatch.delenv("CURL_CA_BUNDLE", raising=False)
+    monkeypatch.setenv("HTTPS_PROXY", "http://proxy.example.test:3128")
+    for key, value in env.items():
+        monkeypatch.setenv(key, value)
+
+    requester = get_ssrf_safe_requester()
+    settings = requester.merge_environment_settings(
+        "https://webhook.example.test/", {}, False, None, None
+    )
+    assert settings["verify"] == expected
+    assert settings["proxies"] == {}
+    assert isinstance(
+        requester.get_adapter("https://webhook.example.test/"),
+        PeerValidatingHTTPAdapter,
+    )
+
+
 def test_get_ssrf_safe_requester_pins_peer_by_default() -> None:
     """
     By default, ``get_ssrf_safe_requester`` returns a session whose adapters
