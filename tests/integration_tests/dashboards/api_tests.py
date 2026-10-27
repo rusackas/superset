@@ -111,6 +111,7 @@ from tests.integration_tests.fixtures.birth_names_dashboard import (
 )
 from tests.integration_tests.fixtures.lineage import (
     inject_expected_dashboard_lineage,  # noqa: F401
+    inject_mixed_datasource_lineage,  # noqa: F401
     lineage_test_data,  # noqa: F401
 )
 from tests.integration_tests.fixtures.world_bank_dashboard import (
@@ -8143,6 +8144,33 @@ class TestDashboardApi(ApiEditorsTestCaseMixin, InsertChartMixin, SupersetTestCa
 
         # The lineage payload is wrapped under "result"
         assert data["result"] == expected
+
+    @pytest.mark.usefixtures("inject_mixed_datasource_lineage")
+    def test_get_dashboard_lineage_mixed_datasource_types(self):
+        """
+        Dashboard API: a non-SQL chart sharing a numeric id with a SQL dataset
+        is not linked to that dataset
+        """
+        self.login(ADMIN_USERNAME)
+        dashboard = self.mixed_lineage["dashboard"]
+        dataset = self.mixed_lineage["dataset"]
+        sql_chart_ids = sorted(c.id for c in self.mixed_lineage["charts"])
+        semantic_chart = self.mixed_lineage["semantic_chart"]
+        assert semantic_chart.datasource_id == dataset.id
+
+        rv = self.client.get(f"api/v1/dashboard/{dashboard.id}/lineage")
+        assert rv.status_code == 200
+        upstream = json.loads(rv.data.decode("utf-8"))["result"]["upstream"]
+
+        chart_dataset_ids = {
+            chart["id"]: chart["dataset_id"] for chart in upstream["charts"]["result"]
+        }
+        assert chart_dataset_ids == {
+            **{chart_id: dataset.id for chart_id in sql_chart_ids},
+            semantic_chart.id: None,
+        }
+        assert [d["id"] for d in upstream["datasets"]["result"]] == [dataset.id]
+        assert sorted(upstream["datasets"]["result"][0]["chart_ids"]) == sql_chart_ids
 
     def test_get_dashboard_lineage_not_found(self):
         """

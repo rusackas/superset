@@ -3022,6 +3022,7 @@
       "ChartLineageDataset": {
         "properties": {
           "database_id": {
+            "nullable": true,
             "type": "integer"
           },
           "database_name": {
@@ -3039,6 +3040,7 @@
             "type": "string"
           },
           "table_name": {
+            "nullable": true,
             "type": "string"
           }
         },
@@ -4339,6 +4341,7 @@
       "DashboardLineageChart": {
         "properties": {
           "dataset_id": {
+            "nullable": true,
             "type": "integer"
           },
           "id": {

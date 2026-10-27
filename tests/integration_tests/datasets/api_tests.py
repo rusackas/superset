@@ -77,6 +77,7 @@ from tests.integration_tests.fixtures.importexport import (
 )
 from tests.integration_tests.fixtures.lineage import (
     inject_expected_dataset_lineage,  # noqa: F401
+    inject_mixed_datasource_lineage,  # noqa: F401
     lineage_test_data,  # noqa: F401
 )
 
@@ -4045,6 +4046,28 @@ class TestDatasetApi(SupersetTestCase):
 
         # The lineage payload is wrapped under "result"
         assert data["result"] == expected
+
+    @pytest.mark.usefixtures("inject_mixed_datasource_lineage")
+    def test_get_dataset_lineage_mixed_datasource_types(self):
+        """
+        Dataset API: dashboard memberships exclude non-SQL charts that share
+        the dataset's numeric id
+        """
+        self.login(ADMIN_USERNAME)
+        dataset = self.mixed_lineage["dataset"]
+        dashboard = self.mixed_lineage["dashboard"]
+        sql_chart_ids = sorted(c.id for c in self.mixed_lineage["charts"])
+
+        rv = self.client.get(f"api/v1/dataset/{dataset.id}/lineage")
+        assert rv.status_code == 200
+        downstream = json.loads(rv.data.decode("utf-8"))["result"]["downstream"]
+
+        assert sorted(c["id"] for c in downstream["charts"]["result"]) == (
+            sql_chart_ids
+        )
+        dashboards = downstream["dashboards"]["result"]
+        assert [d["id"] for d in dashboards] == [dashboard.id]
+        assert sorted(dashboards[0]["chart_ids"]) == sql_chart_ids
 
     def test_get_dataset_lineage_not_found(self):
         """

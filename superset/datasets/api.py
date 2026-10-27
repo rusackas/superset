@@ -112,6 +112,7 @@ from superset.exceptions import (
 from superset.jinja_context import BaseTemplateProcessor, get_template_processor
 from superset.subjects.filters import FilterRelatedSubjects, subject_type_filter
 from superset.utils.core import (
+    DatasourceType,
     parse_boolean_string,
     send_export_zip,
     write_zip_entry,
@@ -1478,6 +1479,7 @@ class DatasetRestApi(SoftDeleteApiMixin, BaseSupersetModelRestApi):
                 chart.id
                 for chart in dashboard.slices
                 if chart.datasource_id == dataset.id
+                and chart.datasource_type == DatasourceType.TABLE
                 and security_manager.can_access_chart(chart)
             ]
             dashboards.append(

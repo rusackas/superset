@@ -2148,10 +2148,12 @@ class ChartLineageChartSchema(Schema):
 class ChartLineageDatasetSchema(Schema):
     id = fields.Integer()
     name = fields.String()
-    database_id = fields.Integer()
+    # database/schema/table details are redacted to ``None`` when the user
+    # cannot access the underlying datasource, so they must be nullable.
+    database_id = fields.Integer(allow_none=True)
     database_name = fields.String(allow_none=True)
     schema = fields.String(allow_none=True)
-    table_name = fields.String()
+    table_name = fields.String(allow_none=True)
 
 
 class ChartLineageDatabaseSchema(Schema):

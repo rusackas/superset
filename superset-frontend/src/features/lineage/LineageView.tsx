@@ -545,16 +545,19 @@ const LineageView: FC<LineageViewProps> = ({ lineageResource, entityType }) => {
         });
       }
 
-      // Link charts to their specific datasets using dataset_id from each chart
-      if (upstream?.charts?.result) {
-        upstream.charts.result.forEach((chart: ChartEntity) => {
-          if (chart.dataset_id) {
-            const datasetKey = datasetKeys.get(chart.dataset_id);
-            const chartKey = chartKeys.get(chart.id);
+      // Link datasets to their charts using each dataset's chart_ids. Numeric
+      // datasource ids are only unique within a datasource type, so the
+      // server-built membership list is the reliable source for these edges;
+      // charts on other datasource types stay linked only to the dashboard.
+      if (upstream?.datasets?.result) {
+        upstream.datasets.result.forEach(dataset => {
+          const datasetKey = datasetKeys.get(dataset.id);
+          dataset.chart_ids?.forEach(chartId => {
+            const chartKey = chartKeys.get(chartId);
             if (datasetKey && chartKey) {
               addLink(datasetKey, chartKey);
             }
-          }
+          });
         });
       }
 

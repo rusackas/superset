@@ -734,7 +734,8 @@ class DashboardLineageChartSchema(Schema):
     id = fields.Integer()
     slice_name = fields.String()
     viz_type = fields.String()
-    dataset_id = fields.Integer()
+    # ``None`` for charts whose datasource is not a SQL dataset.
+    dataset_id = fields.Integer(allow_none=True)
 
 
 class DashboardLineageDatasetSchema(Schema):

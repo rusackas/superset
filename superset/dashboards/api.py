@@ -704,7 +704,6 @@ class DashboardRestApi(
         DashboardDatasetSchema,
         DashboardExportXlsxPostSchema,
         DashboardExportXlsxResponseSchema,
-        DashboardLineageResponseSchema,
         TabsPayloadSchema,
         GetFavStarIdsSchema,
         EmbeddedDashboardResponseSchema,
@@ -875,12 +874,16 @@ class DashboardRestApi(
         database_map: dict[int, dict[str, Any]] = {}
 
         for chart in dash.slices:
+            # ``chart.datasource`` only resolves SQL datasets; charts on other
+            # datasource types (e.g. semantic views) get no dataset reference,
+            # since numeric ids are only unique within a datasource type.
+            dataset = chart.datasource
             charts.append(
                 {
                     "id": chart.id,
                     "slice_name": chart.slice_name,
                     "viz_type": chart.viz_type,
-                    "dataset_id": chart.datasource_id,
+                    "dataset_id": dataset.id if dataset else None,
                 }
             )
 
@@ -889,7 +892,6 @@ class DashboardRestApi(
             # otherwise they are redacted so lineage never leaks datasource
             # internals (the dataset id/name are kept so the graph still
             # renders).
-            dataset = chart.datasource
             if dataset and dataset.id not in dataset_map:
                 can_access = security_manager.can_access_datasource(dataset)
                 dataset_map[dataset.id] = {

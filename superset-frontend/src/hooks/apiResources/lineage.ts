@@ -26,14 +26,15 @@ export type DatabaseEntity = {
   backend: string;
 };
 
-// Dataset entity type
+// Dataset entity type. Database/schema/table details are redacted to null
+// when the user cannot access the underlying datasource.
 export type DatasetEntity = {
   id: number;
   name: string;
   schema: string | null;
-  table_name: string;
-  database_id: number;
-  database_name: string;
+  table_name: string | null;
+  database_id: number | null;
+  database_name: string | null;
   chart_ids?: number[];
 };
 
@@ -43,14 +44,15 @@ export type ChartEntity = {
   slice_name: string;
   viz_type: string;
   dashboard_ids?: number[];
-  dataset_id?: number;
+  // null when the chart's datasource is not a SQL dataset
+  dataset_id?: number | null;
 };
 
 // Dashboard entity type
 export type DashboardEntity = {
   id: number;
   title: string;
-  slug: string;
+  slug: string | null;
   chart_ids?: number[];
 };
 
@@ -58,7 +60,7 @@ export type DashboardEntity = {
 export type DatasetLineage = {
   dataset: DatasetEntity;
   upstream: {
-    database: DatabaseEntity;
+    database: DatabaseEntity | null;
   };
   downstream: {
     charts: {
@@ -74,13 +76,10 @@ export type DatasetLineage = {
 
 // Chart lineage response type
 export type ChartLineage = {
-  chart: ChartEntity & {
-    datasource_id: number;
-    datasource_type: string;
-  };
+  chart: ChartEntity;
   upstream: {
-    dataset: DatasetEntity;
-    database: DatabaseEntity;
+    dataset: DatasetEntity | null;
+    database: DatabaseEntity | null;
   };
   downstream: {
     dashboards: {

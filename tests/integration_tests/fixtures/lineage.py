@@ -19,6 +19,7 @@ import pytest
 from superset import db
 from superset.models.dashboard import Dashboard
 from superset.models.slice import Slice
+from superset.utils.core import DatasourceType
 from superset.utils.database import get_example_database
 from tests.integration_tests.dashboard_utils import create_table_metadata
 
@@ -264,3 +265,39 @@ def inject_expected_dashboard_lineage(request, lineage_test_data):
             "downstream": None,
         },
     }
+
+
+@pytest.fixture(autouse=False)
+def inject_mixed_datasource_lineage(request, lineage_test_data):
+    """
+    Extends the base lineage fixture with a semantic-view chart whose numeric
+    ``datasource_id`` collides with the SQL dataset's id. Numeric ids are only
+    unique within a datasource type, so lineage must not link this chart to
+    the SQL dataset.
+    """
+    dataset = lineage_test_data["dataset"]
+    dashboard = lineage_test_data["dashboard"]
+
+    semantic_chart = Slice(
+        slice_name="Lineage Test Semantic View Chart",
+        viz_type="table",
+        datasource_id=dataset.id,
+        datasource_type=DatasourceType.SEMANTIC_VIEW,
+        params="{}",
+    )
+    db.session.add(semantic_chart)
+    db.session.flush()
+    dashboard.slices = [*dashboard.slices, semantic_chart]
+    db.session.commit()
+
+    request.instance.mixed_lineage = {
+        **lineage_test_data,
+        "semantic_chart": semantic_chart,
+    }
+    yield
+
+    dashboard.slices = [
+        chart for chart in dashboard.slices if chart.id != semantic_chart.id
+    ]
+    db.session.delete(semantic_chart)
+    db.session.commit()

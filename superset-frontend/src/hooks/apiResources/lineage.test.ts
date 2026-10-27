@@ -29,19 +29,19 @@ jest.mock('@superset-ui/core', () => ({
   makeApi: jest.fn(),
 }));
 
-const mockedMakeApi = jest.mocked(makeApi);
+const mockedMakeApi = makeApi as jest.Mock;
 
 // makeApi returns a function that issues the request; capture the endpoint it
 // was configured with so we can assert the correct URL was built.
 function mockApiSuccess(payload: unknown) {
   const fetcher = jest.fn().mockResolvedValue({ result: payload });
-  mockedMakeApi.mockReturnValue(fetcher as any);
+  mockedMakeApi.mockReturnValue(fetcher);
   return fetcher;
 }
 
 function mockApiError(error: Error) {
   const fetcher = jest.fn().mockRejectedValue(error);
-  mockedMakeApi.mockReturnValue(fetcher as any);
+  mockedMakeApi.mockReturnValue(fetcher);
   return fetcher;
 }
 
