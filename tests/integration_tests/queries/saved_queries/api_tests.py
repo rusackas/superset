@@ -541,19 +541,20 @@ class TestSavedQueryApi(SupersetTestCase):
         """
         self.login(ADMIN_USERNAME)
         databases = db.session.query(Database).all()
-        expected_result = {
-            "count": len(databases),
-            "result": [
-                {"extra": {}, "text": str(database), "value": database.id}
-                for database in databases
-            ],
-        }
+        expected_result = [
+            {"extra": {}, "text": str(database), "value": database.id}
+            for database in databases
+        ]
 
         uri = "api/v1/saved_query/related/database"
         rv = self.client.get(uri)
         assert rv.status_code == 200
         data = json.loads(rv.data.decode("utf-8"))
-        assert data == expected_result
+        # Neither query sets an order, so the row order is up to the database.
+        assert data["count"] == len(databases)
+        assert sorted(data["result"], key=lambda item: item["value"]) == sorted(
+            expected_result, key=lambda item: item["value"]
+        )
 
     def test_related_saved_query_not_found(self):
         """

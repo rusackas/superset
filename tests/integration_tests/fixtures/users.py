@@ -26,6 +26,13 @@ def create_role_with_permissions(role_name: str, permissions: list[tuple[str, st
     pvm_list = [
         security_manager.add_permission_view_menu(p[0], p[1]) for p in permissions
     ]
+    # add_role returns an existing role untouched, and the fixtures below share
+    # the "dar" role name with different permissions and never delete it, so
+    # reset its permissions to make each fixture independent of which ran first.
+    if role := security_manager.find_role(role_name):
+        role.permissions = pvm_list
+        security_manager.session.commit()
+        return role
     return security_manager.add_role(role_name, pvm_list)
 
 

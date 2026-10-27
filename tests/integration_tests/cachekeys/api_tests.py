@@ -150,6 +150,9 @@ def test_invalidate_existing_caches(invalidate):
                 {
                     "datasource_name": "birth_names",
                     "database_name": "examples",
+                    # Tests that update the dataset can normalize its catalog to
+                    # the database default, so look it up by the catalog it has.
+                    "catalog": bn.catalog,
                     "schema": schema,
                     "datasource_type": "table",
                 },

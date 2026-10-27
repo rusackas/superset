@@ -68,6 +68,24 @@ def birth_names_table_first(load_birth_names_data: None) -> None:  # noqa: F811
         _cleanup_birth_names_dashboard(dash_id, slice_ids)
 
 
+@pytest.fixture(scope="session", autouse=True)
+def public_role_cleared() -> None:
+    """Start every session with a Public role that has no permissions.
+
+    ``superset init`` syncs Public to ``PUBLIC_ROLE_LIKE`` (Gamma). The
+    public_role_like_* fixtures in tests/integration_tests/fixtures/public_role.py
+    grant it Gamma / TestRole permissions for a test and clear it afterwards,
+    and most of the suite asserts anonymous requests are rejected on that
+    cleared baseline. In a serial run the first such fixture teardown clears
+    it; clearing it up front makes the baseline hold from the first test on,
+    in a serial run and on every pytest-xdist worker alike.
+    """
+    with app.app_context():
+        if public_role := security_manager.get_public_role():
+            public_role.permissions = []
+            db.session.commit()
+
+
 @pytest.fixture
 def app_context():
     with app.app_context() as ctx:

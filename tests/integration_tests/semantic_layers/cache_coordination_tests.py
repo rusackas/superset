@@ -57,6 +57,16 @@ def setup_sample_data() -> None:
     """Override the global integration fixture; these tests require only Redis."""
 
 
+@pytest.fixture(scope="session", autouse=True)
+def birth_names_table_first() -> None:
+    """Override the global integration fixture; these tests require only Redis."""
+
+
+@pytest.fixture(scope="session", autouse=True)
+def public_role_cleared() -> None:
+    """Override the global integration fixture; these tests require only Redis."""
+
+
 def _backends() -> list[CoordinationBackend]:
     redis_port: int = int(os.environ.get("SEMANTIC_CACHE_REDIS_PORT", "0"))
     sentinel_port: int = int(os.environ.get("SEMANTIC_CACHE_SENTINEL_PORT", "0"))
