@@ -2121,3 +2121,105 @@ describe('truncateMetric / truncateMetricB', () => {
     expect(seriesNames).not.toContain('m1, boy (Query A)');
   });
 });
+
+const getTruncatedSeries = (
+  labelMapA: Record<string, string[]>,
+  labelMapB: Record<string, string[]>,
+  overrides: Partial<EchartsMixedTimeseriesFormData>,
+) => {
+  const toRows = (labelMap: Record<string, string[]>) => {
+    const keys = Object.keys(labelMap).filter(key => key !== 'ds');
+    return [599616000000, 599916000000].map((ds, i) => ({
+      ds,
+      ...Object.fromEntries(keys.map((key, j) => [key, i + j])),
+    }));
+  };
+  const queries = [
+    createTestQueryData(toRows(labelMapA), { label_map: labelMapA }),
+    createTestQueryData(toRows(labelMapB), { label_map: labelMapB }),
+  ];
+  const chartProps = createEchartsTimeseriesTestChartProps<
+    EchartsMixedTimeseriesFormData,
+    EchartsMixedTimeseriesProps
+  >({
+    ...MIXED_TIMESERIES_CHART_PROPS_DEFAULTS,
+    defaultQueriesData: queries,
+    formData: { ...formData, ...overrides },
+    queriesData: queries,
+  });
+  return transformProps(chartProps).echartOptions;
+};
+
+test('truncated series sharing a dimension within one query keep unique ids', () => {
+  const labelMap = {
+    ds: ['ds'],
+    'm1, boy': ['m1', 'boy'],
+    'm2, boy': ['m2', 'boy'],
+  };
+  const { series } = getTruncatedSeries(labelMap, labelMap, {
+    metrics: ['m1', 'm2'],
+    metricsB: ['m1', 'm2'],
+    truncateMetric: true,
+    showQueryIdentifiers: true,
+  });
+  const querySeries = (series as SeriesOption[]).filter(
+    s => typeof s.name === 'string' && s.name.endsWith('(Query A)'),
+  );
+
+  expect(querySeries.map(s => s.name)).toEqual([
+    'boy (Query A)',
+    'boy (Query A)',
+  ]);
+  const ids = (series as SeriesOption[]).map(s => s.id);
+  expect(new Set(ids).size).toBe(ids.length);
+  expect(ids).toEqual(
+    expect.arrayContaining(['m1 (Query A), m1, boy', 'm2 (Query A), m2, boy']),
+  );
+});
+
+test('truncated series sharing a dimension across queries keep unique ids', () => {
+  const { series } = getTruncatedSeries(
+    { ds: ['ds'], 'm1, boy': ['m1', 'boy'], 'm2, boy': ['m2', 'boy'] },
+    { ds: ['ds'], 'm3, boy': ['m3', 'boy'], 'm4, boy': ['m4', 'boy'] },
+    {
+      metrics: ['m1', 'm2'],
+      metricsB: ['m3', 'm4'],
+      truncateMetric: true,
+      truncateMetricB: true,
+      showQueryIdentifiers: false,
+    },
+  );
+
+  expect((series as SeriesOption[]).map(s => s.name)).toEqual([
+    'boy',
+    'boy',
+    'boy',
+    'boy',
+  ]);
+  const ids = (series as SeriesOption[]).map(s => s.id);
+  expect([...ids].sort()).toEqual(['m1, boy', 'm2, boy', 'm3, boy', 'm4, boy']);
+});
+
+test('tooltip shows the truncated name for a series keyed by its untruncated id', () => {
+  const { tooltip } = getTruncatedSeries(
+    { ds: ['ds'], 'm1, boy': ['m1', 'boy'] },
+    { ds: ['ds'], 'm3, boy': ['m3', 'boy'] },
+    {
+      metrics: ['m1', 'm2'],
+      metricsB: ['m3', 'm4'],
+      truncateMetric: true,
+      richTooltip: false,
+    },
+  );
+  const html = (
+    tooltip as { formatter: (params: unknown) => string }
+  ).formatter({
+    seriesId: 'm1, boy',
+    value: [599616000000, 1],
+    marker: '',
+    color: '#000',
+  });
+
+  expect(html).toContain('boy');
+  expect(html).not.toContain('m1, boy');
+});

@@ -556,6 +556,13 @@ export default function transformProps(
   // lookups working (#41622).
   const displayLabelMap: Record<string, string[]> = {};
   const displayLabelMapB: Record<string, string[]> = {};
+  // Truncated display names can repeat (e.g. two metrics sharing a groupby
+  // value), but ECharts requires unique series ids. Series ids therefore keep
+  // the untruncated name, and the tooltip, which is keyed by series id,
+  // resolves label-map tuples and rendered names through these id-keyed maps.
+  const seriesIdLabelMap: Record<string, string[]> = {};
+  const seriesIdLabelMapB: Record<string, string[]> = {};
+  const seriesIdToDisplayName: Record<string, string> = {};
 
   rawSeriesA.forEach(entry => {
     const entryName = String(entry.name || '');
@@ -580,16 +587,9 @@ export default function transformProps(
 
     const labelMapValues = rawLabelMap?.[seriesName];
 
-    let displayName: string;
+    let seriesId: string;
 
-    if (!hasTimeComparison && truncateMetric && groupby.length > 0) {
-      displayName = getTruncatedSeriesName({
-        labelMapValues,
-        hasMultipleMetrics: hasMultipleMetricsA,
-        entryName,
-        queryLabel: showQueryIdentifiers ? 'Query A' : undefined,
-      });
-    } else if (groupby.length > 0) {
+    if (groupby.length > 0) {
       // When we have groupby, format as "metric, dimension". Each series
       // belongs to the metric recorded in its label-map tuple
       // ([metric, ...dimensions]) — always using the first metric would
@@ -602,15 +602,26 @@ export default function transformProps(
       const metricPart: string = showQueryIdentifiers
         ? `${metricDisplayName} (Query A)`
         : metricDisplayName;
-      displayName = entryName.includes(metricPart)
+      seriesId = entryName.includes(metricPart)
         ? entryName
         : `${metricPart}, ${entryName}`;
     } else {
       // When no groupby, format as just the entry name with optional query identifier
-      displayName = showQueryIdentifiers ? `${entryName} (Query A)` : entryName;
+      seriesId = showQueryIdentifiers ? `${entryName} (Query A)` : entryName;
     }
+    const displayName =
+      !hasTimeComparison && truncateMetric && groupby.length > 0
+        ? getTruncatedSeriesName({
+            labelMapValues,
+            hasMultipleMetrics: hasMultipleMetricsA,
+            entryName,
+            queryLabel: showQueryIdentifiers ? 'Query A' : undefined,
+          })
+        : seriesId;
+    seriesIdToDisplayName[seriesId] = displayName;
     if (labelMapValues) {
       displayLabelMap[displayName] = labelMapValues;
+      seriesIdLabelMap[seriesId] = labelMapValues;
     }
 
     const axisFormatterConfig = getAxisFormatterConfig(yAxisIndex);
@@ -626,7 +637,7 @@ export default function transformProps(
     const transformedSeries = transformSeries(
       {
         ...entry,
-        id: `${displayName || ''}`,
+        id: `${seriesId || ''}`,
         name: `${displayName || ''}`,
       },
       colorScale,
@@ -694,16 +705,9 @@ export default function transformProps(
 
     const labelMapValuesB = rawLabelMapB?.[seriesEntry];
 
-    let displayName: string;
+    let seriesId: string;
 
-    if (!hasTimeComparisonB && truncateMetricB && groupbyB.length > 0) {
-      displayName = getTruncatedSeriesName({
-        labelMapValues: labelMapValuesB,
-        hasMultipleMetrics: hasMultipleMetricsB,
-        entryName,
-        queryLabel: showQueryIdentifiers ? 'Query B' : undefined,
-      });
-    } else if (groupbyB.length > 0) {
+    if (groupbyB.length > 0) {
       // When we have groupby, format as "metric, dimension". Each series
       // belongs to the metric recorded in its label-map tuple
       // ([metric, ...dimensions]) — always using the first metric would
@@ -716,15 +720,26 @@ export default function transformProps(
       const metricPart: string = showQueryIdentifiers
         ? `${metricDisplayName} (Query B)`
         : metricDisplayName;
-      displayName = entryName.includes(metricPart)
+      seriesId = entryName.includes(metricPart)
         ? entryName
         : `${metricPart}, ${entryName}`;
     } else {
       // When no groupby, format as just the entry name with optional query identifier
-      displayName = showQueryIdentifiers ? `${entryName} (Query B)` : entryName;
+      seriesId = showQueryIdentifiers ? `${entryName} (Query B)` : entryName;
     }
+    const displayName =
+      !hasTimeComparisonB && truncateMetricB && groupbyB.length > 0
+        ? getTruncatedSeriesName({
+            labelMapValues: labelMapValuesB,
+            hasMultipleMetrics: hasMultipleMetricsB,
+            entryName,
+            queryLabel: showQueryIdentifiers ? 'Query B' : undefined,
+          })
+        : seriesId;
+    seriesIdToDisplayName[seriesId] = displayName;
     if (labelMapValuesB) {
       displayLabelMapB[displayName] = labelMapValuesB;
+      seriesIdLabelMapB[seriesId] = labelMapValuesB;
     }
 
     const axisFormatterConfig = getAxisFormatterConfig(yAxisIndexB);
@@ -740,7 +755,7 @@ export default function transformProps(
     const transformedSeries = transformSeries(
       {
         ...entry,
-        id: `${displayName || ''}`,
+        id: `${seriesId || ''}`,
         name: `${displayName || ''}`,
       },
 
@@ -1083,16 +1098,17 @@ export default function transformProps(
           .filter(key => keys.includes(key))
           .forEach(key => {
             const value = forecastValues[key];
-            // The tooltip key is the rendered series name; resolve it through
-            // the display-keyed maps, whose values lead with the raw metric
-            // label both with and without dimensions. Fall back to the
-            // verbose-name inversion for series absent from the maps.
+            // The tooltip key is the series id; resolve it through the
+            // id-keyed maps, whose values lead with the raw metric label both
+            // with and without dimensions. Fall back to the verbose-name
+            // inversion for series absent from the maps.
             let formatterKey;
             if (primarySeries.has(key)) {
-              formatterKey = displayLabelMap[key]?.[0] ?? inverted[key];
+              formatterKey = seriesIdLabelMap[key]?.[0] ?? inverted[key];
             } else {
-              formatterKey = displayLabelMapB[key]?.[0] ?? inverted[key];
+              formatterKey = seriesIdLabelMapB[key]?.[0] ?? inverted[key];
             }
+            const seriesDisplayName = seriesIdToDisplayName[key] ?? key;
             const tooltipFormatter = getFormatter(
               customFormatters,
               formatter,
@@ -1109,14 +1125,14 @@ export default function transformProps(
             );
             const row = formatForecastTooltipSeries({
               ...value,
-              seriesName: key,
+              seriesName: seriesDisplayName,
               formatter: primarySeries.has(key)
                 ? tooltipFormatter
                 : tooltipFormatterSecondary,
               truncation: tooltipTruncation,
             });
             rows.push(row);
-            if (key === focusedSeries) {
+            if (seriesDisplayName === focusedSeries) {
               focusedRow = rows.length - 1;
             }
           });
