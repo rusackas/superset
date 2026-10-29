@@ -108,13 +108,18 @@ const deferResponse = (pending: Deferred[]) =>
 
 // Waits for the requests a just-settled response kicked off (the chained
 // chart/dashboard fetches) and for the resulting React updates to finish.
+// Yields to the task queue rather than calling fetchMock.callHistory.flush(),
+// which would block on the deliberately unsettled deferred responses.
+const nextTick = () =>
+  act(async () => {
+    await new Promise(resolve => {
+      setTimeout(resolve, 0);
+    });
+  });
 const drainPendingWork = async () => {
-  await act(async () => {
-    await fetchMock.callHistory.flush(true);
-  });
-  await act(async () => {
-    await fetchMock.callHistory.flush(true);
-  });
+  await nextTick();
+  await nextTick();
+  await nextTick();
 };
 
 let recentResponder: () => unknown;
@@ -225,8 +230,7 @@ test('an older in-flight refresh cannot repopulate a deleted item', async () => 
 
   // ...then the older, stale response arrives and must be discarded. Wait for
   // the chart/dashboard requests it chains, then let React settle.
-  const chainedCallsBefore =
-    fetchMock.callHistory.calls(chartsEndpoint).length;
+  const chainedCallsBefore = fetchMock.callHistory.calls(chartsEndpoint).length;
   pending[0].resolve({
     result: [recentItem('Doomed dash', 1), recentItem('Kept dash', 2)],
   });
@@ -271,7 +275,7 @@ test('a stale refresh that fails cannot blank current items or toast', async () 
   expect(screen.getByText('Kept dash')).toBeInTheDocument();
   expect(screen.getByText('mine: Current dash')).toBeInTheDocument();
   expect(
-    (store.getState() as { messageToasts: unknown[] }).messageToasts,
+    (store.getState() as unknown as { messageToasts: unknown[] }).messageToasts,
   ).toEqual([]);
 });
 
